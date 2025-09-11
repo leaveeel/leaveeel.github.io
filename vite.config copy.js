@@ -6,9 +6,6 @@ import { defineConfig } from 'vite'
 import viteCompression from 'vite-plugin-compression'
 import viteImagemin from 'vite-plugin-imagemin'
 
-const  INVALID_CHAR_REGEX = /[\x00-\x1F\x7F<>*#"{}|^[\]`;?:&=+$,]/g; 
-const  DRIVE_LETTER_REGEX = /^[az]:/i;
-
 export default () => {
   return defineConfig({
     base: './',
@@ -25,11 +22,6 @@ export default () => {
               }
               return 'vendor'
             }
-          },
-          sanitizeFileName ( name ) {
-            const match = DRIVE_LETTER_REGEX.exec(name);
-            const driveLetter = match ? match[ 0 ] : '';
-            return (driveLetter + name.slice(driveLetter.length).replace(INVALID_CHAR_REGEX, ""));
           }
         }
       },
