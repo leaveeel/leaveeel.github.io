@@ -8,7 +8,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   
   {
-    path: '/check-ask',
+    path: '/checkask',
     name: 'CheckAsk',
     component: () => import('../views/checkAsk/checkAsk.vue')
   }
