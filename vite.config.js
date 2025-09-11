@@ -11,7 +11,7 @@ const  DRIVE_LETTER_REGEX = /^[az]:/i;
 
 export default () => {
   return defineConfig({
-    base: './',
+    base: '/',
     build: {
       assetsInlineLimit: 4096,
       cssCodeSplit: true,
