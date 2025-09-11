@@ -1,0 +1,1 @@
+import{_ as e}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{j as t,f as o}from"./vendor--8JwYIzc.js";const r={};function n(c,s){return o(),t("h1",null,"Maybe you need to enter the right website")}const f=e(r,[["render",n]]);export{f as default};

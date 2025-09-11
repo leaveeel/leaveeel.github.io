@@ -1,0 +1,25 @@
+{
+  "globals": {
+    "computed": true,
+    "defineExpose": true,
+    "h": true,
+    "inject": true,
+    "nextTick": true,
+    "onActivated": true,
+    "onDeactivated": true,
+    "onMounted": true,
+    "onUnmounted": true,
+    "onUpdated": true,
+    "provide": true,
+    "reactive": true,
+    "ref": true,
+    "toRaw": true,
+    "toRefs": true,
+    "useRoute": true,
+    "useRouter": true,
+    "useStore": true,
+    "watch": true,
+    "getCurrentInstance": true,
+    "ResizeObserver": true
+   }
+}
