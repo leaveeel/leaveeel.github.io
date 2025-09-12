@@ -9,6 +9,7 @@
     "build": "vite build && copy docs\\index.html docs\\404.html"
   },
   "dependencies": {
+    "axios": "^1.12.0",
     "default-passive-events": "^4.0.0",
     "pinia": "^3.0.3",
     "vue": "^3.5.21",
