@@ -18,15 +18,24 @@ const submit = () => {
     confirmText: 'Submit'
   })
   .then(() => {
-    column.value = formModel.field2
-    localStorage.removeItem('checkSequence')
-    checkSequence.value = []
-    localStorage.setItem('formModel', formModel.field1 + ',' + formModel.field2)
-    setList(formModel.field1, formModel.field2)
+    init()
   })
 }
 
-const setList = (t:number, c:number) => {
+const init = () => {
+  lastGroup.value = null
+  q.value = []
+  column.value = formModel.field2
+  localStorage.removeItem('checkSequence')
+  localStorage.removeItem('question')
+  loadQuestion()
+  loadMatch()
+  checkSequence.value = []
+  localStorage.setItem('formModel', formModel.field1 + ',' + formModel.field2)
+  setList(formModel.field1, formModel.field2)
+}
+
+const setList = (t: number, c: number) => {
   const row = Math.ceil(t / c)
   const init = Array.from({ length: row }, (_, i) =>
     Array.from({ length: c }, (_, j) => {
@@ -51,11 +60,14 @@ const checkSequence = ref<number[][]>([])
 
 const question = ref<string[][]>([])
 const match = ref<string[]>([])
-const loadT = () => {
+const loadQuestion = () => {
   get_local_txt('/Question.txt').then(res => {
     let arr = res.data.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
     question.value = [shuffleArray(arr), shuffleArray(arr)]
+    localStorage.setItem('question', JSON.stringify(question.value))
   })
+}
+const loadMatch = () => {
   get_local_txt('/Match.txt').then(res => {
     let arr = res.data.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
     match.value = shuffleArray(arr)
@@ -65,7 +77,8 @@ const loadT = () => {
 onMounted(() => {
   const saved = localStorage.getItem('formModel')
   const savedSequence = localStorage.getItem('checkSequence')
-  loadT()
+  const savedQuestion = localStorage.getItem('question')
+  loadMatch()
   if (saved) {
     const [f1, f2] = saved.split(',').map(Number)
     formModel.field1 = f1
@@ -74,21 +87,30 @@ onMounted(() => {
     if (savedSequence) {
       checkSequence.value = JSON.parse(savedSequence)
     }
+    if (savedQuestion) {
+      question.value = JSON.parse(savedQuestion)
+    }
+    setList(formModel.field1, formModel.field2)
   } else {
-    localStorage.removeItem('checkSequence')
-    localStorage.setItem('formModel', formModel.field1 + ',' + formModel.field2)
+    init()
   }
-  setList(formModel.field1, formModel.field2)
 })
 
 const list = ref()
 const q = ref<string[]>([])
+const lastGroup = ref<number | null>(null)
 
 const handleCheck = (rowIndex: number, colIndex: number, group: number) => {
   if(JSON.stringify(checkSequence.value.slice(-1)[0]) === JSON.stringify([rowIndex, colIndex, group])) {
     list.value[rowIndex][colIndex][group] = false
     checkSequence.value.pop()
+    lastGroup.value = group === 0 ? 1 : 0
   } else if(!list.value[rowIndex][colIndex][group]) {
+    if(lastGroup.value !== null && lastGroup.value === group) {
+      zcToast.warning(' the question in the different group.')
+      return
+    }
+    lastGroup.value = group
     const qItem = createQuestion(group, rowIndex * column.value + colIndex)
     if (qItem) {
       list.value[rowIndex][colIndex][group] = true
@@ -115,6 +137,10 @@ const createQuestion = (group: number, index: number) => {
 }
 
 const show = ref(false)
+
+const clear = (e: MouseEvent) => {
+  (e.currentTarget as HTMLElement).classList.add('is-clear')
+}
 </script>
 
 <template>
@@ -144,8 +170,8 @@ const show = ref(false)
 
   <zcDialog v-model="show" :close-on-click-modal="false" closeIcon>
     <template #header>Question</template>
-    <p>{{ q[0] }}</p>
-    <p>{{ q[1] }}</p>
+    <p class="blurry" @click="clear">{{ q[0] }}</p>
+    <p class="blurry" @click="clear">{{ q[1] }}</p>
   </zcDialog>
 </template>
 
@@ -210,5 +236,16 @@ const show = ref(false)
       }
     }
   }
+}
+
+.blurry {
+  filter: blur(6px);
+  transition: filter 0.2s ease;
+  user-select: none; 
+}
+
+.blurry.is-clear {
+  filter: blur(0);
+  user-select: auto;
 }
 </style>
