@@ -49,12 +49,12 @@ const setList = (t:number, c:number) => {
 const column = ref<number>(formModel.field2)
 const checkSequence = ref<number[][]>([])
 
-const question = ref<string[]>([])
+const question = ref<string[][]>([])
 const match = ref<string[]>([])
 const loadT = () => {
   get_local_txt('/Question.txt').then(res => {
     let arr = res.data.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
-    question.value = shuffleArray(arr)
+    question.value = [shuffleArray(arr), shuffleArray(arr)]
   })
   get_local_txt('/Match.txt').then(res => {
     let arr = res.data.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
@@ -89,7 +89,7 @@ const handleCheck = (rowIndex: number, colIndex: number, group: number) => {
     list.value[rowIndex][colIndex][group] = false
     checkSequence.value.pop()
   } else if(!list.value[rowIndex][colIndex][group]) {
-    const qItem = createQuestion(rowIndex * column.value + colIndex)
+    const qItem = createQuestion(group, rowIndex * column.value + colIndex)
     if (qItem) {
       list.value[rowIndex][colIndex][group] = true
       checkSequence.value.push([rowIndex, colIndex, group])
@@ -106,12 +106,12 @@ const RSMatch = () => {
   return match.value[Math.floor(Math.random() * len)]
 }
 
-const createQuestion = (index: number) => {
-  if(index >= question.value.length) {
-    zcToast.warning(`Insufficient: ${index} / ${question.value.length}`, { duration: 5000 })
+const createQuestion = (group: number, index: number) => {
+  if(index >= question.value[group].length) {
+    zcToast.warning(`Insufficient: ${index + 1} / ${question.value[group].length}`, { duration: 5000 })
     return false
   }
-  return [RSMatch(), question.value[index]]
+  return [RSMatch(), question.value[group][index]]
 }
 
 const show = ref(false)
