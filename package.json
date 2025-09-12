@@ -6,7 +6,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "vite",
-    "build": "vite build && copy docs\\index.html docs\\404.html"
+    "build": "vite build && cp docs\\index.html docs\\404.html"
   },
   "dependencies": {
     "axios": "^1.12.0",
