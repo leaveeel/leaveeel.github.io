@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { zcForm, zcFormItem, zcInput, zcButton, zcMessage } from 'zc-ui-component';
+import { zcForm, zcFormItem, zcInput, zcButton, zcMessage } from 'zc-ui-component'
 
 const formModel = reactive({
   field1: 50,
@@ -10,12 +10,12 @@ const handleBlur = (field: 'field1' | 'field2') => {
   formModel[field] = Math.floor(formModel[field])
 }
 
-
 const submit = () => {
   zcMessage({
     message: 'Submit will reset the selection with total ' + formModel.field1 + ', column ' + formModel.field2 + '. Continue to submit?',
     confirmText: 'Submit'
-  }).then(() => {
+  })
+  .then(() => {
     column.value = formModel.field2
     localStorage.removeItem('checkSequence')
     checkSequence.value = []
@@ -58,19 +58,20 @@ onMounted(() => {
     if (savedSequence) {
       checkSequence.value = JSON.parse(savedSequence)
     }
+  } else {
+    localStorage.removeItem('checkSequence')
+    localStorage.setItem('formModel', formModel.field1 + ',' + formModel.field2)
   }
   setList(formModel.field1, formModel.field2)
 })
 
 const list = ref()
 
-
 const handleCheck = (rowIndex: number, colIndex: number, group: number) => {
-  console.log(checkSequence.value)
   if(JSON.stringify(checkSequence.value.slice(-1)[0]) === JSON.stringify([rowIndex, colIndex, group])) {
     list.value[rowIndex][colIndex][group] = false
     checkSequence.value.pop()
-  }else {
+  } else if(!list.value[rowIndex][colIndex][group]) {
     list.value[rowIndex][colIndex][group] = true
     checkSequence.value.push([rowIndex, colIndex, group])
   }
@@ -110,7 +111,7 @@ const handleCheck = (rowIndex: number, colIndex: number, group: number) => {
 }
 
 .check-ask {
-  margin: auto;
+  margin: 1em auto;
   display: grid;
   gap: 10px;
   background-color: #ffecf8;
