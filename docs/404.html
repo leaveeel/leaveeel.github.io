@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script>
+      // 从 URL 中提取路径和查询参数
+      var path = window.location.pathname;
+      var query = window.location.search;
+      var segment = path.split('/')[1]; // 对于 https://user.github.io/repo/route, segment 是 'repo'
+
+      // 构造重定向的 URL
+      // 我们将原始路径和查询参数作为 hash 的一部分传递
+      var redirectUrl = '/' + segment + '/#' + path.substring(1) + query;
+
+      // 执行重定向
+      // 使用 replace 方法，这样用户的浏览器历史记录中不会留下这个重定向页
+      window.location.replace(redirectUrl);
+    </script>
+  </head>
+  <body>
+    <p>If you are not redirected automatically, follow this <a id="redirect-link" href="#">link</a>.</p>
+    <script>
+      // 为了保险起见，也更新一下备用链接的 href
+      document.getElementById('redirect-link').href = redirectUrl;
+    </script>
+  </body>
+</html>
