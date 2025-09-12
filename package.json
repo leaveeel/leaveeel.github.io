@@ -6,7 +6,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build && copy docs\\index.html docs\\404.html"
   },
   "dependencies": {
     "default-passive-events": "^4.0.0",
