@@ -7,6 +7,12 @@ const router = useRouter();
 
 const box = ref<string>('')
 
+onMounted(() => {
+    if(localStorage.getItem('access') === '1') {
+        router.push({ path: '/checkAsk' })
+    }
+})
+
 const handleClick = (e: any) => {
     let text = e.target.innerText
     if(box.value.length === 0 && text === '1') {
@@ -17,6 +23,7 @@ const handleClick = (e: any) => {
         e.target.innerText = 'O'
     }
     if(box.value === '100') {
+        localStorage.setItem('access', '1')
         router.push({ path: '/checkAsk' })
     }
 }
