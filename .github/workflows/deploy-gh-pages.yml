@@ -1,0 +1,61 @@
+# 工作流程的名称
+name: Deploy to GitHub Pages
+
+# 触发工作流程的事件
+on:
+  # 当推送到 main 分支时触发
+  push:
+    branches:
+      - main  # 你可以根据你的主分支名修改，比如 master
+  # 允许你手动在 Actions 标签页中触发此工作流程
+  workflow_dispatch:
+
+# 设置任务的默认权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 定义一个任务（job），可以有多个任务
+jobs:
+  # 任务的 ID，可以自定义
+  build-and-deploy:
+    # 指定运行此任务的操作系统
+    runs-on: ubuntu-latest
+    
+    # 任务的步骤
+    steps:
+      # 步骤1：检出（下载）你的代码到虚拟机
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 步骤2：设置 Node.js 环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22' # 指定你项目所需的 Node.js 版本
+          cache: 'npm' # 缓存 npm 依赖，加快构建速度
+
+      # 步骤3：安装项目依赖
+      - name: Install dependencies
+        run: npm ci # 使用 npm ci 更快更稳定
+
+      # 步骤4：执行构建命令
+      - name: Build project
+        run: npm run build
+
+      # 步骤5：配置 GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # 步骤6：上传构建产物（artifact）
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 指定要上传的文件夹
+          path: './docs' # 如果你的构建输出目录是 build，请修改为 './build'
+
+      # 步骤7：部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

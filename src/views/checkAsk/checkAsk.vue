@@ -5,7 +5,8 @@ import { shuffleArray } from '@/utils/common'
 
 const formModel = reactive({
   field1: 50,
-  field2: 7
+  field2: 7,
+  field3: true
 })
 
 const handleBlur = (field: 'field1' | 'field2') => {
@@ -151,6 +152,9 @@ const clear = (e: MouseEvent) => {
     <zcFormItem label="Column">
       <zcInput v-model="formModel.field2" type="number" :min="1" @blur="handleBlur('field2')" />
     </zcFormItem>
+    <zcFormItem label="Blurry">
+      <zcCheckbox v-model="formModel.field3" />
+    </zcFormItem>
     <zcFormItem>
       <zcButton type="primary" htmlType="submit">Reset</zcButton>
     </zcFormItem>
@@ -170,8 +174,8 @@ const clear = (e: MouseEvent) => {
 
   <zcDialog v-model="show" :close-on-click-modal="false" closeIcon>
     <template #header>Question</template>
-    <p class="blurry" @click="clear">{{ q[0] }}</p>
-    <p class="blurry" @click="clear">{{ q[1] }}</p>
+    <p :class="{ blurry: formModel.field3 }" @click="clear">{{ q[0] }}</p>
+    <p :class="{ blurry: formModel.field3 }" @click="clear">{{ q[1] }}</p>
   </zcDialog>
 </template>
 
