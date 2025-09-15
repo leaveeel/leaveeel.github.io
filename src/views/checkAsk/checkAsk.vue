@@ -1,39 +1,55 @@
 <script setup lang="ts">
-import { zcForm, zcFormItem, zcInput, zcButton, zcMessage, zcDialog } from 'zc-ui-component'
-import {get_local_txt} from '@/request'
+import { zcForm, zcFormItem, zcInput, zcButton, zcMessage, zcDialog, zcCheckbox } from 'zc-ui-component'
 import { shuffleArray } from '@/utils/common'
 
 const formModel = reactive({
-  field1: 50,
-  field2: 7,
-  field3: true
+  total: 50,
+  column: 7,
+  blurry: true,
+  checkonly: true
 })
 
-const handleBlur = (field: 'field1' | 'field2') => {
+const handleBlur = (field: 'total' | 'column') => {
   formModel[field] = Math.floor(formModel[field])
 }
 
 const submit = () => {
   zcMessage({
-    message: 'Submit will reset the selection with total ' + formModel.field1 + ', column ' + formModel.field2 + '. Continue to submit?',
+    message: 'Submit will reset the selection with total ' + formModel.total + ', column ' + formModel.column + '. Continue to submit?',
     confirmText: 'Submit'
   })
-  .then(() => {
-    init()
+    .then(() => {
+      init()
+    })
+}
+
+const reset = () => {
+  zcMessage({
+    message: 'Clear will clear all selections. Continue to clear?',
+    confirmText: 'Clear'
   })
+    .then(() => {
+      formModel.total = 50
+      formModel.column = 7
+      formModel.blurry = true
+      formModel.checkonly = true
+      question.value = []
+      match.value = []
+      localStorage.removeItem('formModel')
+      localStorage.removeItem('question')
+      localStorage.removeItem('match')
+      init()
+    })
 }
 
 const init = () => {
   lastGroup.value = null
   q.value = []
-  column.value = formModel.field2
-  localStorage.removeItem('checkSequence')
-  localStorage.removeItem('question')
-  loadQuestion()
-  loadMatch()
   checkSequence.value = []
-  localStorage.setItem('formModel', formModel.field1 + ',' + formModel.field2)
-  setList(formModel.field1, formModel.field2)
+  localStorage.removeItem('checkSequence')
+  column.value = formModel.column
+  localStorage.setItem('formModel', JSON.stringify(formModel))
+  setList(formModel.total, formModel.column)
 }
 
 const setList = (t: number, c: number) => {
@@ -56,42 +72,35 @@ const setList = (t: number, c: number) => {
   list.value = init
 }
 
-const column = ref<number>(formModel.field2)
+const column = ref<number>(formModel.column)
 const checkSequence = ref<number[][]>([])
 
 const question = ref<string[][]>([])
 const match = ref<string[]>([])
-const loadQuestion = () => {
-  get_local_txt('/Question.txt').then(res => {
-    let arr = res.data.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
-    question.value = [shuffleArray(arr), shuffleArray(arr)]
-    localStorage.setItem('question', JSON.stringify(question.value))
-  })
-}
-const loadMatch = () => {
-  get_local_txt('/Match.txt').then(res => {
-    let arr = res.data.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
-    match.value = shuffleArray(arr)
-  })
-}
 
 onMounted(() => {
   const saved = localStorage.getItem('formModel')
   const savedSequence = localStorage.getItem('checkSequence')
   const savedQuestion = localStorage.getItem('question')
-  loadMatch()
+  const savedMatch = localStorage.getItem('match')
   if (saved) {
-    const [f1, f2] = saved.split(',').map(Number)
-    formModel.field1 = f1
-    formModel.field2 = f2
-    column.value = f2
+    const JSONSAVED = JSON.parse(saved)
+    formModel.total = JSONSAVED.total
+    formModel.column = JSONSAVED.column
+    formModel.blurry = JSONSAVED.blurry
+    formModel.checkonly = JSONSAVED.checkonly
+    column.value = JSONSAVED.column
     if (savedSequence) {
       checkSequence.value = JSON.parse(savedSequence)
+      lastGroup.value = checkSequence.value.length ? checkSequence.value.slice(-1)[0][2] : null
     }
     if (savedQuestion) {
       question.value = JSON.parse(savedQuestion)
     }
-    setList(formModel.field1, formModel.field2)
+    if (savedMatch) {
+      match.value = JSON.parse(savedMatch)
+    }
+    setList(formModel.total, formModel.column)
   } else {
     init()
   }
@@ -105,19 +114,24 @@ const handleCheck = (rowIndex: number, colIndex: number, group: number) => {
   if(JSON.stringify(checkSequence.value.slice(-1)[0]) === JSON.stringify([rowIndex, colIndex, group])) {
     list.value[rowIndex][colIndex][group] = false
     checkSequence.value.pop()
-    lastGroup.value = group === 0 ? 1 : 0
+    checkSequence.value.length === 0 ? lastGroup.value = null : (lastGroup.value = group === 0 ? 1 : 0)
   } else if(!list.value[rowIndex][colIndex][group]) {
     if(lastGroup.value !== null && lastGroup.value === group) {
       zcToast.warning(' the question in the different group.')
       return
     }
     lastGroup.value = group
-    const qItem = createQuestion(group, rowIndex * column.value + colIndex)
-    if (qItem) {
+    if(formModel.checkonly) {
       list.value[rowIndex][colIndex][group] = true
       checkSequence.value.push([rowIndex, colIndex, group])
-      show.value = true
-      q.value = qItem
+    } else {
+      const qItem = createQuestion(group, rowIndex * column.value + colIndex)
+      if (qItem) {
+        list.value[rowIndex][colIndex][group] = true
+        checkSequence.value.push([rowIndex, colIndex, group])
+        show.value = true
+        q.value = qItem
+      }
     }
   }
   localStorage.setItem('checkSequence', JSON.stringify(checkSequence.value))
@@ -142,22 +156,79 @@ const show = ref(false)
 const clear = (e: MouseEvent) => {
   (e.currentTarget as HTMLElement).classList.add('is-clear')
 }
+
+const input = ref<HTMLInputElement | null>(null)
+const inputKey = ref<number>(0)
+const inputType = ref<number | null>(null)
+const importQuestions = (type: number) => {
+  inputType.value = type
+  inputKey.value += 1
+  input.value?.click()
+}
+
+const files = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  if (input.files && input.files[0]) {
+    const file = input.files[0]
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      let arr = content.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
+      if (inputType.value === 0) {
+        zcMessage({
+          message: `Importing questions total will be set to ${arr.length}. Continue to import?`,
+          confirmText: 'Import'
+        })
+          .then(() => {
+            formModel.total = arr.length
+            question.value = [shuffleArray(arr), shuffleArray(arr)]
+            localStorage.setItem('question', JSON.stringify(question.value))
+            init()
+          })
+      } else if (inputType.value === 1) {
+        zcMessage({
+          message: `Importing match will be set to ${arr.length}. Continue to import?`,
+          confirmText: 'Import'
+        })
+          .then(() => {
+            match.value = shuffleArray(arr)
+            localStorage.setItem('match', JSON.stringify(match.value))
+            init()
+          })
+      }
+    }
+    reader.readAsText(file)
+  }
+}
 </script>
 
 <template>
   <zcForm class="setting" :model="formModel" inline @submit="submit">
     <zcFormItem label="Total">
-      <zcInput v-model="formModel.field1" type="number" :min="1" @blur="handleBlur('field1')" />
+      <zcInput v-model="formModel.total" type="number" :min="1" @blur="handleBlur('total')" :disabled="question.length" />
     </zcFormItem>
     <zcFormItem label="Column">
-      <zcInput v-model="formModel.field2" type="number" :min="1" @blur="handleBlur('field2')" />
+      <zcInput v-model="formModel.column" type="number" :min="1" @blur="handleBlur('column')" />
     </zcFormItem>
-    <zcFormItem label="Blurry">
-      <zcCheckbox v-model="formModel.field3" />
+    <zcFormItem label="Blurry" v-if="!formModel.checkonly">
+      <zcCheckbox v-model="formModel.blurry" />
+    </zcFormItem>
+    <zcFormItem label="checkonly">
+      <zcCheckbox v-model="formModel.checkonly" :disabled="!question.length" />
     </zcFormItem>
     <zcFormItem>
       <zcButton type="primary" htmlType="submit">Reset</zcButton>
     </zcFormItem>
+    <zcFormItem>
+      <zcButton type="danger" text @click="reset">Clear</zcButton>
+    </zcFormItem>
+    <zcFormItem>
+      <zcButton type="warning" plain @click="importQuestions(0)">Import Questions</zcButton>
+    </zcFormItem>
+    <zcFormItem>
+      <zcButton type="warning" plain @click="importQuestions(1)">Import Match</zcButton>
+    </zcFormItem>
+    <input ref="input" :key="inputKey" type="file" @change="files" style="display: none;" />
   </zcForm>
 
   <div class="check-ask" v-if="list">
@@ -165,8 +236,8 @@ const clear = (e: MouseEvent) => {
       <div class="ask-item" v-for="(col, colIndex) in row" :key="colIndex">
         <span>{{ rowIndex * column + colIndex + 1 }}</span>
         <div class="check">
-          <div class="check-item" :class="{ check: col[0] }" @click="handleCheck(rowIndex, colIndex, 0)"></div>
-          <div class="check-item" :class="{ check: col[1] }" @click="handleCheck(rowIndex, colIndex, 1)"></div>
+          <div class="check-item" :class="{ check: col[0], last: checkSequence.length && checkSequence.slice(-1)[0][0] === rowIndex && checkSequence.slice(-1)[0][1] === colIndex && checkSequence.slice(-1)[0][2] === 0 }" @click="handleCheck(rowIndex, colIndex, 0)"></div>
+          <div class="check-item" :class="{ check: col[1], last: checkSequence.length && checkSequence.slice(-1)[0][0] === rowIndex && checkSequence.slice(-1)[0][1] === colIndex && checkSequence.slice(-1)[0][2] === 1 }" @click="handleCheck(rowIndex, colIndex, 1)"></div>
         </div>
       </div>
     </div>
@@ -174,8 +245,8 @@ const clear = (e: MouseEvent) => {
 
   <zcDialog v-model="show" :close-on-click-modal="false" closeIcon>
     <template #header>Question</template>
-    <p :class="{ blurry: formModel.field3 }" @click="clear">{{ q[0] }}</p>
-    <p :class="{ blurry: formModel.field3 }" @click="clear">{{ q[1] }}</p>
+    <p :class="{ blurry: formModel.blurry }" @click="clear">{{ q[0] }}</p>
+    <p :class="{ blurry: formModel.blurry }" @click="clear">{{ q[1] }}</p>
   </zcDialog>
 </template>
 
@@ -220,6 +291,9 @@ const clear = (e: MouseEvent) => {
             &.check {
               background-color: #f99;
             }
+            &.last {
+              border: 2px solid #f00;
+            }
             &:hover {
               &:not(.check) {
                 background-color: #fee;
@@ -229,6 +303,9 @@ const clear = (e: MouseEvent) => {
           &:nth-child(2n) {
             &.check {
               background-color: #99f;
+            }
+            &.last {
+              border: 2px solid #00f;
             }
             &:hover {
               &:not(.check) {
@@ -245,7 +322,8 @@ const clear = (e: MouseEvent) => {
 .blurry {
   filter: blur(6px);
   transition: filter 0.2s ease;
-  user-select: none; 
+  user-select: none;
+  cursor: pointer;
 }
 
 .blurry.is-clear {
