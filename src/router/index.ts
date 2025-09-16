@@ -19,8 +19,12 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((_to: any, _from: any, next: any) => {
-    next()
+router.beforeEach((to: any, _from: any, next: any) => {
+  let access = localStorage.getItem('access')
+  if (!access && to.name === 'CheckAsk') {
+    return next({ path: '/' })
+  }
+  next()
 })
 
 export default router
